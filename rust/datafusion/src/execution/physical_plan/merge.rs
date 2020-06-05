@@ -22,11 +22,9 @@ use crate::error::Result;
 use crate::execution::physical_plan::common::RecordBatchIterator;
 use crate::execution::physical_plan::{common, ExecutionPlan};
 use crate::execution::physical_plan::{BatchIterator, Partition};
-use arrow::datatypes::Schema;
-use arrow::record_batch::RecordBatch;
+use arrow::{datatypes::Schema, record_batch::RecordBatch};
+use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::thread::JoinHandle;
 
 /// Merge execution plan executes partitions in parallel and combines them into a single
 /// partition. No guarantees are made about the order of the resulting partition.
@@ -66,27 +64,26 @@ struct MergePartition {
 
 impl Partition for MergePartition {
     fn execute(&self) -> Result<Arc<Mutex<dyn BatchIterator>>> {
-        let threads: Vec<JoinHandle<Result<Vec<RecordBatch>>>> = self
+        let combined_results = self
             .partitions
-            .iter()
-            .map(|p| {
-                let p = p.clone();
-                thread::spawn(move || {
-                    let it = p.execute()?;
-                    common::collect(it)
-                })
-            })
-            .collect();
+            .par_iter()
+            .map::<_, Result<Vec<Arc<RecordBatch>>>>(|partition| {
+                let it = partition.execute()?;
+                let batches = common::collect(it)?;
+                let results = batches
+                    .iter()
+                    .map(|batch| Arc::new(batch.clone()))
+                    .collect();
 
-        // combine the results from each thread
-        let mut combined_results: Vec<Arc<RecordBatch>> = vec![];
-        for thread in threads {
-            let join = thread.join().expect("Failed to join thread");
-            let result = join?;
-            result
-                .iter()
-                .for_each(|batch| combined_results.push(Arc::new(batch.clone())));
-        }
+                Ok(results)
+            })
+            .try_reduce(
+                || vec![],
+                |mut acc, v| {
+                    acc.extend(v);
+                    Ok(acc)
+                },
+            )?;
 
         Ok(Arc::new(Mutex::new(RecordBatchIterator::new(
             self.schema.clone(),
