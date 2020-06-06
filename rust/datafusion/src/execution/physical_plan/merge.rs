@@ -23,8 +23,8 @@ use crate::execution::physical_plan::common::RecordBatchIterator;
 use crate::execution::physical_plan::{common, ExecutionPlan};
 use crate::execution::physical_plan::{BatchIterator, Partition};
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
-use rayon::prelude::*;
 use parking_lot::Mutex;
+use rayon::prelude::*;
 use std::sync::Arc;
 
 /// Merge execution plan executes partitions in parallel and combines them into a single
@@ -70,13 +70,9 @@ impl Partition for MergePartition {
             .par_iter()
             .map::<_, Result<Vec<Arc<RecordBatch>>>>(|partition| {
                 let it = partition.execute()?;
-                let batches = common::collect(it)?;
-                let results = batches
-                    .iter()
-                    .map(|batch| Arc::new(batch.clone()))
-                    .collect();
+                let batches = common::collect_ref(it)?;
 
-                Ok(results)
+                Ok(batches)
             })
             .try_reduce(
                 || vec![],

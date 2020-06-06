@@ -110,8 +110,8 @@ fn exec_and_print(
 
     if results.is_empty() {
         println!(
-            "0 rows in set. Query took {} seconds.",
-            now.elapsed().as_secs()
+            "0 rows in set. Query took {} milliseconds.",
+            now.elapsed().as_millis()
         );
         return Ok(());
     }
@@ -122,15 +122,15 @@ fn exec_and_print(
 
     if row_count > 1 {
         println!(
-            "{} row in set. Query took {} seconds.",
+            "{} row in set. Query took {} milliseconds.",
             row_count,
-            now.elapsed().as_secs()
+            now.elapsed().as_millis()
         );
     } else {
         println!(
-            "{} rows in set. Query took {} seconds.",
+            "{} rows in set. Query took {} milliseconds.",
             row_count,
-            now.elapsed().as_secs()
+            now.elapsed().as_millis()
         );
     }
 

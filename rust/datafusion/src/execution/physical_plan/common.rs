@@ -81,6 +81,24 @@ pub fn collect(it: Arc<Mutex<dyn BatchIterator>>) -> Result<Vec<RecordBatch>> {
     }
 }
 
+/// Create a vector of refcounted record batches from an iterator
+pub fn collect_ref(it: Arc<Mutex<dyn BatchIterator>>) -> Result<Vec<Arc<RecordBatch>>> {
+    let mut it = it.lock();
+    let mut results: Vec<Arc<RecordBatch>> = vec![];
+    loop {
+        match it.next() {
+            Ok(Some(batch)) => {
+                results.push(Arc::new(batch));
+            }
+            Ok(None) => {
+                // end of result set
+                return Ok(results);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
 /// Recursively build a list of files in a directory with a given extension
 pub fn build_file_list(dir: &str, filenames: &mut Vec<String>, ext: &str) -> Result<()> {
     let metadata = metadata(dir)?;

@@ -30,7 +30,6 @@ include = [
     "Cargo.toml",
 ]
 edition = "2018"
-
 [lib]
 name = "datafusion"
 path = "src/lib.rs"

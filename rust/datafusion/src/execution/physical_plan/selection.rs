@@ -112,8 +112,13 @@ impl BatchIterator for SelectionIterator {
 
     /// Get the next batch
     fn next(&mut self) -> Result<Option<RecordBatch>> {
-        let mut input = self.input.lock();
-        match input.next()? {
+        let batch = {
+            let mut input = self.input.lock();
+            let batch = input.next()?;
+            batch
+        };
+
+        match batch {
             Some(batch) => {
                 // evaluate the selection predicate to get a boolean array
                 let predicate_result = self.expr.evaluate(&batch)?;

@@ -177,12 +177,13 @@ impl ExecutionContext {
     }
 
     fn build_schema(&self, columns: Vec<SQLColumnDef>) -> Result<Schema> {
-        let mut fields = Vec::new();
-
-        for column in columns {
-            let data_type = self.make_data_type(column.data_type)?;
-            fields.push(Field::new(&column.name, data_type, column.allow_null));
-        }
+        let fields = columns
+            .into_iter()
+            .map(|column| {
+                let data_type = self.make_data_type(column.data_type)?;
+                Ok(Field::new(&column.name, data_type, column.allow_null))
+            })
+            .collect::<Result<Vec<Field>>>()?;
 
         Ok(Schema::new(fields))
     }
@@ -469,10 +470,11 @@ impl ExecutionContext {
                 return_type,
             } => match &self.scalar_functions.get(name) {
                 Some(f) => {
-                    let mut physical_args = vec![];
-                    for e in args {
-                        physical_args.push(self.create_physical_expr(e, input_schema)?);
-                    }
+                    let physical_args = args
+                        .into_iter()
+                        .map(|e| self.create_physical_expr(e, input_schema))
+                        .collect::<Result<Vec<Arc<dyn PhysicalExpr>>>>()?;
+
                     Ok(Arc::new(ScalarFunctionExpr::new(
                         name,
                         Box::new(f.fun.clone()),
