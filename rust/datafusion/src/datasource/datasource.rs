@@ -17,7 +17,8 @@
 
 //! Data source traits
 
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 use arrow::datatypes::Schema;
 

@@ -294,7 +294,7 @@ impl ExecutionContext {
                             "Table provider returned no partitions".to_string(),
                         ))
                     } else {
-                        let partition = partitions[0].lock().unwrap();
+                        let partition = partitions[0].lock();
                         let schema = partition.schema();
                         let exec =
                             DatasourceExec::new(schema.clone(), partitions.clone());
@@ -574,7 +574,7 @@ impl ExecutionContext {
                     let file = fs::File::create(path)?;
                     let mut writer = csv::Writer::new(file);
                     let it = p.execute()?;
-                    let mut it = it.lock().unwrap();
+                    let mut it = it.lock();
                     loop {
                         match it.next() {
                             Ok(Some(batch)) => {

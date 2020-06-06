@@ -24,7 +24,8 @@ use crate::execution::physical_plan::{common, ExecutionPlan};
 use crate::execution::physical_plan::{BatchIterator, Partition};
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
 use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 /// Merge execution plan executes partitions in parallel and combines them into a single
 /// partition. No guarantees are made about the order of the resulting partition.

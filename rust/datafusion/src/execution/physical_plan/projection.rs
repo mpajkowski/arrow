@@ -20,7 +20,8 @@
 //! of a projection on table `t1` where the expressions `a`, `b`, and `a+b` are the
 //! projection expressions.
 
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 use crate::error::Result;
 use crate::execution::physical_plan::{
@@ -123,7 +124,7 @@ impl BatchIterator for ProjectionIterator {
 
     /// Get the next batch
     fn next(&mut self) -> Result<Option<RecordBatch>> {
-        let mut input = self.input.lock().unwrap();
+        let mut input = self.input.lock();
         match input.next()? {
             Some(batch) => {
                 let arrays: Result<Vec<_>> =
@@ -165,7 +166,7 @@ mod tests {
         for partition in projection.partitions()? {
             partition_count += 1;
             let iterator = partition.execute()?;
-            let mut iterator = iterator.lock().unwrap();
+            let mut iterator = iterator.lock();
             while let Some(batch) = iterator.next()? {
                 assert_eq!(1, batch.num_columns());
                 row_count += batch.num_rows();

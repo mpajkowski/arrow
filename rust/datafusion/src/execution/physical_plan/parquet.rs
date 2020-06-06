@@ -17,9 +17,10 @@
 
 //! Execution plan for reading Parquet files
 
+use parking_lot::Mutex;
 use std::fs::File;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 
 use crate::error::{ExecutionError, Result};
@@ -235,7 +236,7 @@ mod tests {
         assert_eq!(partitions.len(), 1);
 
         let results = partitions[0].execute()?;
-        let mut results = results.lock().unwrap();
+        let mut results = results.lock();
         let batch = results.next()?.unwrap();
 
         assert_eq!(8, batch.num_rows());

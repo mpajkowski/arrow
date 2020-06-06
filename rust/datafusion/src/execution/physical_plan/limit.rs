@@ -25,8 +25,9 @@ use arrow::array::ArrayRef;
 use arrow::compute::limit;
 use arrow::datatypes::Schema;
 use arrow::record_batch::RecordBatch;
+use parking_lot::Mutex;
 use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// Limit execution plan
 pub struct LimitExec {
@@ -79,7 +80,7 @@ struct LimitPartition {
 impl Partition for LimitPartition {
     fn execute(&self) -> Result<Arc<Mutex<dyn BatchIterator>>> {
         // collect up to "limit" rows on each partition
-        let threads: Vec<_> = self
+        let results: Vec<_> = self
             .partitions
             .par_iter()
             .map(|p| {
@@ -91,10 +92,10 @@ impl Partition for LimitPartition {
             .collect();
 
         // combine the results from each thread, up to the limit
-        let mut combined_results: Vec<Arc<RecordBatch>> = vec![];
+        let mut combined_results: Vec<Arc<RecordBatch>> = Vec::with_capacity(self.limit);
         let mut count = 0;
-        for thread in threads {
-            let result = thread?;
+        for result in results {
+            let result = result?;
             for batch in result {
                 let capacity = self.limit - count;
                 if batch.num_rows() <= capacity {
@@ -136,7 +137,7 @@ fn collect_with_limit(
     limit: usize,
 ) -> Result<Vec<RecordBatch>> {
     let mut count = 0;
-    let mut it = it.lock().unwrap();
+    let mut it = it.lock();
     let mut results: Vec<RecordBatch> = vec![];
     loop {
         match it.next() {

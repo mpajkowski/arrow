@@ -277,8 +277,7 @@ fn get_projected_schema(
 
     // once we reach the table scan, we can use the accumulated set of column
     // indexes as the projection in the table scan
-    let mut projection: Vec<usize> = Vec::with_capacity(accum.len());
-    accum.iter().for_each(|i| projection.push(*i));
+    let mut projection: Vec<usize> = accum.iter().map(|i| *i).collect();
 
     // Ensure that we are reading at least one column from the table in case the query
     // does not reference any columns directly such as "SELECT COUNT(1) FROM table"

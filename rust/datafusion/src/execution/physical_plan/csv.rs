@@ -17,8 +17,9 @@
 
 //! Execution plan for reading CSV files
 
+use parking_lot::Mutex;
 use std::fs::File;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::error::{ExecutionError, Result};
 use crate::execution::physical_plan::common;
@@ -296,7 +297,7 @@ mod tests {
         assert_eq!(3, csv.schema().fields().len());
         let partitions = csv.partitions()?;
         let results = partitions[0].execute()?;
-        let mut it = results.lock().unwrap();
+        let mut it = results.lock();
         let batch = it.next()?.unwrap();
         assert_eq!(3, batch.num_columns());
         let batch_schema = batch.schema();
@@ -320,7 +321,7 @@ mod tests {
         assert_eq!(13, csv.schema().fields().len());
         let partitions = csv.partitions()?;
         let results = partitions[0].execute()?;
-        let mut it = results.lock().unwrap();
+        let mut it = results.lock();
         let batch = it.next()?.unwrap();
         assert_eq!(13, batch.num_columns());
         let batch_schema = batch.schema();

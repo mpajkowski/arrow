@@ -17,7 +17,8 @@
 
 //! Defines the selection execution plan. A selection filters rows based on a predicate
 
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 use crate::error::{ExecutionError, Result};
 use crate::execution::physical_plan::{
@@ -111,7 +112,7 @@ impl BatchIterator for SelectionIterator {
 
     /// Get the next batch
     fn next(&mut self) -> Result<Option<RecordBatch>> {
-        let mut input = self.input.lock().unwrap();
+        let mut input = self.input.lock();
         match input.next()? {
             Some(batch) => {
                 // evaluate the selection predicate to get a boolean array

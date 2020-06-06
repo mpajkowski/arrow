@@ -17,7 +17,8 @@
 
 //! Execution plan for reading in-memory batches of data
 
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 
 use crate::error::Result;
 use crate::execution::physical_plan::{BatchIterator, ExecutionPlan, Partition};

@@ -17,9 +17,10 @@
 
 //! Defines common code used in execution plans
 
+use parking_lot::Mutex;
 use std::fs;
 use std::fs::metadata;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::error::{ExecutionError, Result};
 use crate::execution::physical_plan::BatchIterator;
@@ -64,7 +65,7 @@ impl BatchIterator for RecordBatchIterator {
 
 /// Create a vector of record batches from an iterator
 pub fn collect(it: Arc<Mutex<dyn BatchIterator>>) -> Result<Vec<RecordBatch>> {
-    let mut it = it.lock().unwrap();
+    let mut it = it.lock();
     let mut results: Vec<RecordBatch> = vec![];
     loop {
         match it.next() {

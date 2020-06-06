@@ -17,9 +17,10 @@
 
 //! Traits for physical query plan, supporting parallel execution for partitioned relations.
 
+use parking_lot::Mutex;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::error::Result;
 use crate::logicalplan::ScalarValue;

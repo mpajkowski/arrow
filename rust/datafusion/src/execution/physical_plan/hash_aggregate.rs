@@ -17,9 +17,10 @@
 
 //! Defines the execution plan for the hash aggregate operation
 
+use parking_lot::Mutex;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::error::{ExecutionError, Result};
 use crate::execution::physical_plan::{
@@ -301,7 +302,7 @@ impl BatchIterator for GroupedHashAggregateIterator {
             FnvHashMap::default();
 
         // iterate over all input batches and update the accumulators
-        let mut input = self.input.lock().unwrap();
+        let mut input = self.input.lock();
 
         // iterate over input and perform aggregation
         while let Some(batch) = input.next()? {
@@ -579,7 +580,7 @@ impl BatchIterator for HashAggregateIterator {
             .collect();
 
         // iterate over all input batches and update the accumulators
-        let mut input = self.input.lock().unwrap();
+        let mut input = self.input.lock();
 
         // iterate over input and perform aggregation
         while let Some(batch) = input.next()? {
