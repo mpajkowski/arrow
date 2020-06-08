@@ -36,7 +36,8 @@ use crate::execution::physical_plan::common;
 use crate::execution::physical_plan::csv::{CsvExec, CsvReadOptions};
 use crate::execution::physical_plan::datasource::DatasourceExec;
 use crate::execution::physical_plan::expressions::{
-    Alias, Avg, BinaryExpr, CastExpr, Column, Count, Literal, Max, Min, Sum,
+    Alias, Avg, BinaryExpr, CastExpr, Column, Count, IsNotNull, IsNull, Literal, Max,
+    Min, Sum,
 };
 use crate::execution::physical_plan::hash_aggregate::HashAggregateExec;
 use crate::execution::physical_plan::limit::LimitExec;
@@ -458,6 +459,12 @@ impl ExecutionContext {
                 self.create_physical_expr(left, input_schema)?,
                 op.clone(),
                 self.create_physical_expr(right, input_schema)?,
+            ))),
+            Expr::IsNull(expr) => Ok(Arc::new(IsNull::new(
+                self.create_physical_expr(expr, input_schema)?,
+            ))),
+            Expr::IsNotNull(expr) => Ok(Arc::new(IsNotNull::new(
+                self.create_physical_expr(expr, input_schema)?,
             ))),
             Expr::Cast { expr, data_type } => Ok(Arc::new(CastExpr::try_new(
                 self.create_physical_expr(expr, input_schema)?,

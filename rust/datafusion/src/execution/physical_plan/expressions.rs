@@ -39,7 +39,9 @@ use arrow::compute;
 use arrow::compute::kernels::arithmetic::{add, divide, multiply, subtract};
 use arrow::compute::kernels::boolean::{and, or};
 use arrow::compute::kernels::cast::cast;
-use arrow::compute::kernels::comparison::{eq, gt, gt_eq, lt, lt_eq, neq};
+use arrow::compute::kernels::comparison::{
+    eq, gt, gt_eq, is_not_null, is_null, lt, lt_eq, neq,
+};
 use arrow::compute::kernels::comparison::{
     eq_utf8, gt_eq_utf8, gt_utf8, like_utf8, lt_eq_utf8, lt_utf8, neq_utf8, nlike_utf8,
 };
@@ -894,11 +896,11 @@ macro_rules! compute_utf8_op {
         let ll = $LEFT
             .as_any()
             .downcast_ref::<$DT>()
-            .expect("compute_op failed to downcast array");
+            .expect("compute_utf8_op failed to downcast left array");
         let rr = $RIGHT
             .as_any()
             .downcast_ref::<$DT>()
-            .expect("compute_op failed to downcast array");
+            .expect("compute_utf8_op failed to downcast right array");
         Ok(Arc::new(paste::expr! {[<$OP _utf8>]}(&ll, &rr)?))
     }};
 }
@@ -1082,6 +1084,57 @@ pub fn binary(
     r: Arc<dyn PhysicalExpr>,
 ) -> Arc<dyn PhysicalExpr> {
     Arc::new(BinaryExpr::new(l, op, r))
+}
+
+pub struct IsNull {
+    expr: Arc<dyn PhysicalExpr>,
+}
+
+impl IsNull {
+    pub fn new(expr: Arc<dyn PhysicalExpr>) -> IsNull {
+        IsNull { expr }
+    }
+}
+
+impl PhysicalExpr for IsNull {
+    fn name(&self) -> String {
+        "IS NULL".into()
+    }
+
+    fn data_type(&self, input_schema: &Schema) -> Result<DataType> {
+        self.expr.data_type(input_schema)
+    }
+
+    fn evaluate(&self, batch: &RecordBatch) -> Result<ArrayRef> {
+        let arg = self.expr.evaluate(batch)?;
+        Ok(Arc::new(is_null(&*arg)?))
+    }
+}
+
+pub struct IsNotNull {
+    expr: Arc<dyn PhysicalExpr>,
+}
+
+impl IsNotNull {
+    pub fn new(expr: Arc<dyn PhysicalExpr>) -> IsNotNull {
+        IsNotNull { expr }
+    }
+}
+
+impl PhysicalExpr for IsNotNull {
+    fn name(&self) -> String {
+        "IS NOT NULL".into()
+    }
+
+    fn data_type(&self, input_schema: &Schema) -> Result<DataType> {
+        self.expr.data_type(input_schema)
+    }
+
+    fn evaluate(&self, batch: &RecordBatch) -> Result<ArrayRef> {
+        let arg = self.expr.evaluate(batch)?;
+
+        Ok(Arc::new(is_not_null(&*arg)?))
+    }
 }
 
 /// Not expression

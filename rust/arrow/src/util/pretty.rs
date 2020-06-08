@@ -17,7 +17,7 @@
 
 //! Utilities for printing record batches
 
-use crate::array;
+use crate::array::{self, Array};
 use crate::datatypes::{DataType, TimeUnit};
 use crate::record_batch::RecordBatch;
 
@@ -70,12 +70,15 @@ fn create_table(results: &[RecordBatch]) -> Result<Table> {
 
 macro_rules! make_string {
     ($array_type:ty, $column: ident, $row: ident) => {{
-        Ok($column
-            .as_any()
-            .downcast_ref::<$array_type>()
-            .unwrap()
-            .value($row)
-            .to_string())
+        let arr = $column.as_any().downcast_ref::<$array_type>().unwrap();
+
+        let string = if arr.is_null($row) {
+            "NULL".into()
+        } else {
+            arr.value($row).to_string()
+        };
+
+        Ok(string)
     }};
 }
 

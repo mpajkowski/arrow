@@ -116,23 +116,24 @@ fn exec_and_print(
         return Ok(());
     }
 
-    pretty::print_batches(&results)?;
-
     let row_count: usize = results.iter().map(|b| b.num_rows()).sum();
 
-    if row_count > 1 {
-        println!(
-            "{} row in set. Query took {} milliseconds.",
-            row_count,
-            now.elapsed().as_millis()
-        );
-    } else {
-        println!(
+    let summary = if row_count > 1 {
+        format!(
             "{} rows in set. Query took {} milliseconds.",
             row_count,
             now.elapsed().as_millis()
-        );
-    }
+        )
+    } else {
+        format!(
+            "{} row in set. Query took {} milliseconds.",
+            row_count,
+            now.elapsed().as_millis()
+        )
+    };
+
+    pretty::print_batches(&results)?;
+    println!("{}", summary);
 
     Ok(())
 }

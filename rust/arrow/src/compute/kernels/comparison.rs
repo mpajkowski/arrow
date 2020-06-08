@@ -321,6 +321,34 @@ where
     Ok(PrimitiveArray::<BooleanType>::from(Arc::new(data)))
 }
 
+/// Tests values of an array whether they are null
+pub fn is_null(array: &dyn Array) -> Result<BooleanArray> {
+    let data = array.data();
+
+    let mut res = BooleanBuilder::new(data.len());
+    for i in 0..array.data().len() {
+        res.append_value(data.is_null(i))?;
+    }
+
+    let res = res.finish();
+
+    Ok(res)
+}
+
+/// Tests values of an array whether they are not null
+pub fn is_not_null(array: &dyn Array) -> Result<BooleanArray> {
+    let data = array.data();
+    let mut res = BooleanBuilder::new(data.len());
+
+    for i in 0..array.data().len() {
+        res.append_value(data.is_valid(i))?;
+    }
+
+    let res = res.finish();
+
+    Ok(res)
+}
+
 /// Helper function to perform boolean lambda function on values from an array and a scalar value using
 /// SIMD.
 #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), feature = "simd"))]
